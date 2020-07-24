@@ -265,7 +265,7 @@
       <Culture>0x0804</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Wininet.lib;shlwapi.lib;ZLIB.LIB;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Wininet.lib;shlwapi.lib;zlibstat.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\Bin\PcCortr.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\PcCortr.def</ModuleDefinitionFile>

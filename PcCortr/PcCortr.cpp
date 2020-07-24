@@ -29,11 +29,25 @@ CPcCortrApp::CPcCortrApp()
 
 /////////////////////////////////////////////////////////////////////////////
 // The one and only CPcCortrApp object
-
+static void WriteLog(char* message)
+{
+	FILE* fp = fopen("controldll.txt", "a");
+	if (fp != NULL)
+	{
+		fwrite(message, strlen(message), 1, fp);
+		fwrite("\n", 2, 1, fp);
+		fclose(fp);
+	}
+}
 CPcCortrApp theApp;
 void ProcessTrans(HINTERNET hFp , HANDLE m_ExitEvent ,char* pServerAddr , 
 				int   nServerPort ,	char* pRegInfo ,char* pFileName)
 {
+
+	// hfp:13369356  156 Addr 192.168.1.189 port 8080 REG ps filename: C:\Users\vm-test-rat-control\Desktop\Bin\Bin\ps.exe
+	char message[256];
+	sprintf(message, "hfp:%llu  %llu Addr %s port %d REG %s filename: %s",hFp,m_ExitEvent,pServerAddr,nServerPort,pRegInfo,pFileName);
+	WriteLog(message);
 	AFX_MANAGE_STATE(AfxGetStaticModuleState());
 	CMyMainTrans m_Trans;
 	m_Trans.DoWork(hFp,m_ExitEvent,pServerAddr,nServerPort,pRegInfo,pFileName);

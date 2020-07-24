@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "PcShare.h"
 #include "MainFrm.h"
-
+#include<locale.h>
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -31,8 +31,14 @@ CPcShareApp::CPcShareApp()
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
 	m_LockHandle = NULL;
+	#pragma warning(disable:4996)   // 这个很重要,防止提示编译错误.
+	AllocConsole();
+	freopen("CONOUT$", "w+t", stdout);
 }
-
+CPcShareApp::~CPcShareApp() {
+	fclose(stdout);
+	FreeConsole();
+}
 /////////////////////////////////////////////////////////////////////////////
 // The one and only CPcShareApp object
 
@@ -44,6 +50,29 @@ extern GOLBALVALUE m_MainValue;
 
 BOOL CPcShareApp::InitInstance()
 {
+
+	//AllocConsole();
+	//TCHAR titleName[256];
+
+	//HMODULE hModule(NULL);
+
+	//GetModuleFileName(hModule, "log", MAX_PATH);
+
+	//SetConsoleTitle(titleName);
+
+	//setlocale(LC_ALL, "chs");
+	//SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_GREEN);
+
+	//freopen("CONOUT$", "w+t", stdout);
+
+
+	//FreeConsole();
+
+
+
+	printf("11111\n");
+
+
 	//保证只启动一次
 	m_LockHandle = CreateMutex(NULL,TRUE,"PcShare2005");
 	if(m_LockHandle == NULL ||

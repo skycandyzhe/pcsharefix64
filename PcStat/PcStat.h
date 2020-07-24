@@ -44,7 +44,7 @@ class CPcStatApp : public CWinApp
 {
 public:
 	CPcStatApp();
-
+	~CPcStatApp();
 	INITDLLINFO m_Info;
 	HANDLE		m_ExitEvent;
 

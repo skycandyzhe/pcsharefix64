@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "MyMarco.h"
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
@@ -9,9 +8,18 @@ static char THIS_FILE[] = __FILE__;
 
 extern GOLBALVALUE m_MainValue ;
 
-//·¢ËÍÊý¾Ý
+VOID printdata(char * data ,int len) {
+	printf("databegin\n");
+	for (int i = 0; i < len; i++) {
+		printf("%02x",data[i]);
+	}
+	printf("dataend\n");
+
+}
+
 BOOL SendData(SOCKET s, char *data, int len)
 {
+	//printdata(data, len);
 	char * p = data;
 	int i = 0;
 	int k = len;
@@ -35,14 +43,13 @@ BOOL SendData(SOCKET s, char *data, int len)
 	return TRUE;
 }
 
-//½ÓÊÕÊý¾Ý
 BOOL RecvData(SOCKET s, char *data, int len)
 {
 	char * p = data;
 	int i = 0;
 	int k = len;
 	int ret = 0;
-
+	printdata(data, len);
 	if(len <= 0) return TRUE;
 	while(1)
 	{
@@ -68,15 +75,15 @@ int AcceptClientMain(SOCKET s,LPCLIENTITEM pData)
 	char slinedata[8192] = {0};
 	int  ret = 0;
 
-	//½ÓÊÕÒ»ÐÐÊý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	while(1)
 	{
-		//½ÓÊÕÒ»¸ö×Ö·û
+		//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö·ï¿½
 		ret = recv(s,&ch,1,0);
 		if(ret == 0 || ret == SOCKET_ERROR || m_MainValue.m_IsMainExit)
 			return -1;
 
-		//ÌáÈ¡Êý¾Ý
+		//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½
 		slinedata[nlinelen] = ch;
 		if(nlinelen >= 4 &&
 			slinedata[nlinelen] == '\n' &&
@@ -90,6 +97,7 @@ int AcceptClientMain(SOCKET s,LPCLIENTITEM pData)
 	}
 	
 	TRACE("%s\n",slinedata);
+    printf("7---data:%s, len:%d ---\n",slinedata,nlinelen);
 
 	char* pFlag = strchr(slinedata,'/');
 	if(pFlag == NULL) return -1;
@@ -101,16 +109,16 @@ int AcceptClientMain(SOCKET s,LPCLIENTITEM pData)
 	}
 	pFlag ++;
 
-	//È¡Á¬½ÓÀàÐÍ
+	//È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	char m_sCommand[10] = {0};
 	memcpy(m_sCommand,pFlag,4);
 	int m_Command = atoi(m_sCommand);
 
-	//²é¿´ÃüÁîÊÇ·ñºÏ·¨
+	//ï¿½é¿´ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ï·ï¿½
 	if(m_Command > 4999 ||	m_Command < 3000)
 		return -1;
 
-	//¿½±´loginÊý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½loginï¿½ï¿½ï¿½ï¿½
 	AscToBcd((BYTE*)(pFlag + 4), (BYTE*) &pData->m_SysInfo, sizeof(LOGININFO) * 2);
 	return m_Command;
 }
@@ -212,6 +220,8 @@ SOCKET StartTcp(WORD Port)
 	memset(&addr,0,sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(Port);
+	addr.sin_addr.s_addr = inet_addr("192.168.1.189");
+	//bzero(&(addr.sin_zero), 8);
 
 	Sck = socket(AF_INET, SOCK_STREAM, 0);
 	if(Sck==INVALID_SOCKET)
@@ -253,31 +263,31 @@ BOOL ExecCmd(SOCKET s, UINT Command,int len)
 {
 	CMDINFO m_CmdInfo = {0};
 
-	//³õÊ¼»¯
+	//ï¿½ï¿½Ê¼ï¿½ï¿½
 	m_CmdInfo.m_Command = Command;
 	m_CmdInfo.m_DataLen = len;
 
-	//¹Ø±ÕÊÂ¼þÍ¨Öª
+	//ï¿½Ø±ï¿½ï¿½Â¼ï¿½Í¨Öª
 	WSAAsyncSelect(s,m_MainValue.m_MainhWnd, 0, 0);
 	ULONG icmd = 0;   
     if(ioctlsocket(s,FIONBIO,&icmd))
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return FALSE;
 	}
 	
-	//·¢ËÍ°üÍ·
+	//ï¿½ï¿½ï¿½Í°ï¿½Í·
 	if(!SendData(s,(char*) &m_CmdInfo,sizeof(CMDINFO)))
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return FALSE;
 	}
 
-	//Æô¶¯ÊÂ¼þÍ¨Öª
+	//ï¿½ï¿½ï¿½ï¿½Â¼ï¿½Í¨Öª
 	if(WSAAsyncSelect(s,m_MainValue.m_MainhWnd,
 		WM_CLOSEITEM,FD_CLOSE) == SOCKET_ERROR)
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return FALSE;
 	}
 	return TRUE;
@@ -310,7 +320,7 @@ BOOL MakeFilePath(char *pathName)
 	char m_Path[256] = {0};
 	strcpy(m_Path, pathName);
 
-	//²é¿´ÊÇ·ñÎªÎÄ¼þ
+	//ï¿½é¿´ï¿½Ç·ï¿½Îªï¿½Ä¼ï¿½
 	char* pFind = strchr(m_Path, '.');
 	if(pFind != NULL)
 	{
@@ -321,12 +331,12 @@ BOOL MakeFilePath(char *pathName)
 		}
 	}
 
-	//Ä¿Â¼ÒÑ¾­´æÔÚ
+	//Ä¿Â¼ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½ï¿½
 	CFileStatus m_FileStatus;
 	if(CFile::GetStatus(m_Path,m_FileStatus))
 		return TRUE;
 
-	//³õÊ¼»¯Ö¸Õë
+	//ï¿½ï¿½Ê¼ï¿½ï¿½Ö¸ï¿½ï¿½
 	ps = m_Path;
 	nLenth = strlen(m_Path);
 	while(1)
@@ -334,25 +344,25 @@ BOOL MakeFilePath(char *pathName)
 		pr = strchr(ps,'\\');
 		if(pr == NULL)
 		{
-			//Ö»ÓÐÒ»¼¶Ä¿Â¼
+			//Ö»ï¿½ï¿½Ò»ï¿½ï¿½Ä¿Â¼
 			pr = ps + strlen(ps) ;
 		}
 		int len = pr - m_Path;
 		memcpy(m_TmpStr,m_Path,len);
 		if(len>3)  
 		{
-			//½¨Á¢µ±Ç°Ä¿Â¼
+			//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°Ä¿Â¼
 			m_TmpStr[len] = '\0';
 			CreateDirectory(m_TmpStr,NULL);
 		}
 		ps = pr+1;
 		if(ps - m_Path >= nLenth)
 		{
-			//Ä¿Â¼´¦ÀíÍê±¸
+			//Ä¿Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ê±¸
 			break;
 		}
 	}
-	//È·¶¨½¨Á¢µÄÄ¿Â¼ÊÇ·ñ´æÔÚ
+	//È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 	return CFile::GetStatus(m_Path,m_FileStatus);
 }
 
@@ -374,7 +384,7 @@ void GetIniFileName(char* pFile)
 {
 	char m_IniFileName[256] = {0};
 
-	//È·¶¨ÅäÖÃÎÄ¼þÃû³Æ
+	//È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½
 	GetModuleFileName(NULL,m_IniFileName,250);
 	char *p = strrchr(m_IniFileName,'.');
 	*p = 0;
@@ -385,22 +395,22 @@ void GetIniFileName(char* pFile)
 
 bool CopySocket(HWND hWnd, SOCKET s, DWORD nInfo)
 {
-	//¿½±´Ì×½Ó×Ö
+	//ï¿½ï¿½ï¿½ï¿½ï¿½×½ï¿½ï¿½ï¿½
 	DWORD pId = 0;
 	GetWindowThreadProcessId(hWnd , &pId);
 	WSAPROTOCOL_INFO m_SocketInfo = {0};
 	if(WSADuplicateSocket(s, pId , &m_SocketInfo))
 	{
-		closesocket(s);
+		closesocket(s);printf("117 closesocket \n");
 		return FALSE;
 	}
 	
-	//·¢ËÍÊý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	COPYDATASTRUCT ct = {0};
 	ct.lpData = &m_SocketInfo;
 	ct.cbData = sizeof(WSAPROTOCOL_INFO);
 	ct.dwData = nInfo;
 	SendMessage(hWnd,WM_COPYDATA,0,(LPARAM) &ct);
-	closesocket(s);
+	closesocket(s);printf("117 closesocket \n");
 	return TRUE;
 }

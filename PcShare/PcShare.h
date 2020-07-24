@@ -25,7 +25,7 @@ class CPcShareApp : public CWinApp
 {
 public:
 	CPcShareApp();
-
+	~CPcShareApp();
 	HANDLE m_LockHandle;
 
 // Overrides

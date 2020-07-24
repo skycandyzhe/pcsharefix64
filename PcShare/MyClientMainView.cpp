@@ -88,8 +88,8 @@ void CMyClientMainView::OnInitialUpdate()
 	m_imagelist.Add(AfxGetApp()->LoadIcon(IDI_ICON_VIDEO));
 	
 	lcCountries.SetImageList(&m_imagelist,LVSIL_SMALL);
-	lcCountries.InsertColumn(0,"已连接的客户列表",LVCFMT_LEFT,104);
-	lcCountries.InsertColumn(1,"客户注释",LVCFMT_LEFT,60);
+	lcCountries.InsertColumn(0,"宸茶繛鎺ョ殑瀹㈡埛鍒楄〃",LVCFMT_LEFT,104);
+	lcCountries.InsertColumn(1,"瀹㈡埛娉ㄩ噴",LVCFMT_LEFT,60);
 	lcCountries.SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP|
 		LVS_EX_ONECLICKACTIVATE | LVS_EX_UNDERLINEHOT |LVS_EX_SUBITEMIMAGES);
 
@@ -144,11 +144,11 @@ ShowMyText(m_Text, FALSE);
 */
 LPCLIENTITEM CMyClientMainView::InsertItem(LPCLIENTITEM pItem)
 {
-	//查看客户是否存在
+	//鏌ョ湅瀹㈡埛鏄惁瀛樺湪
 	int nItem = FindItemTitle(pItem->m_SysInfo.ID);
 	if(nItem != -1)
 	{
-		//替换新套接字
+		//鏇挎崲鏂板鎺ュ瓧
 		LPCLIENTITEM pFindItem = 
 			(LPCLIENTITEM) GetListCtrl().GetItemData(nItem);
 		closesocket(pFindItem->m_WorkSocket);
@@ -162,10 +162,10 @@ LPCLIENTITEM CMyClientMainView::InsertItem(LPCLIENTITEM pItem)
 	*p = 0;
 	strcat(m_LogFileName,".log");
 	char m_Name[256] = {0};
-	GetPrivateProfileString("客户注释",pItem->m_SysInfo.ID,
+	GetPrivateProfileString("瀹㈡埛娉ㄩ噴",pItem->m_SysInfo.ID,
 		pItem->m_SysInfo.m_PcName,m_Name,255,m_LogFileName);
 
-	//增加新客户
+	// add new client
 	LPCLIENTITEM pClientItem = new CLIENTITEM;
 	memcpy(pClientItem,pItem,sizeof(CLIENTITEM));
 
@@ -182,7 +182,7 @@ LPCLIENTITEM CMyClientMainView::InsertItem(LPCLIENTITEM pItem)
       LVIF_IMAGE | LVIF_PARAM | LVIF_TEXT, 0, pClientItem->m_Title,
       INDEXTOSTATEIMAGEMASK(1), LVIS_STATEIMAGEMASK, 1,(LPARAM) pClientItem);
 	}
-	GetListCtrl().SetItemText(nItem,1,m_Name);
+	GetListCtrl().SetItemText(nItem,1,"ttttee");
 	int nCount = GetListCtrl().GetItemCount();
 	if(nCount == 1)
 		GetListCtrl().SetItemState(nItem,LVIS_SELECTED, LVIS_SELECTED);
@@ -276,6 +276,7 @@ DWORD CMyClientMainView::CloseClient(SOCKET s)
 		pItem = (LPCLIENTITEM) GetListCtrl().GetItemData(i);
 		if(pItem->m_WorkSocket == s)
 		{
+			printf(" 16 closesocket \n");
 			closesocket(s);
 			delete pItem;
 			GetListCtrl().DeleteItem(i);
@@ -303,6 +304,7 @@ void CMyClientMainView::StopWork()
 	for(int i = 0; i < GetListCtrl().GetItemCount(); i++)
 	{
 		pItem = (LPCLIENTITEM) GetListCtrl().GetItemData(i);
+		printf("17 closesocket \n");
 		closesocket(pItem->m_WorkSocket);
 		delete pItem;
 	}
@@ -311,11 +313,13 @@ void CMyClientMainView::StopWork()
 
 void CMyClientMainView::DeleteCurItem()
 {
+
 	LPCLIENTITEM pItem = NULL;
 	if(GetListCtrl().GetSelectedCount() > 0)
 	{
 		int nItem = GetListCtrl().GetNextItem(-1,LVNI_SELECTED);
 		pItem = (LPCLIENTITEM) GetListCtrl().GetItemData(nItem);
+		printf("18 closesocket \n");
 		closesocket(pItem->m_WorkSocket);
 		delete pItem;
 		GetListCtrl().DeleteItem(nItem);

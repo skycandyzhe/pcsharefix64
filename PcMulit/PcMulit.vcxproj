@@ -253,7 +253,7 @@
       <Culture>0x0804</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>Ws2_32.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;zlibstat.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\Bin\PcMulit.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ProgramDatabaseFile>.\Release/PcMulit.pdb</ProgramDatabaseFile>
